@@ -1,24 +1,14 @@
 apiVersion: v1
 entries:
-  helm-jenkins:
-  - apiVersion: v2
-    created: "2022-06-03T19:31:27.047790872Z"
-    description: A Helm chart for Kubernetes
-    digest: 810f32b5b7a06611b9f5e76669b739c290e52879c07a63c2f076698ee80412e7
-    name: helm-jenkins
-    type: application
-    urls:
-    - https://nem1ga.github.io/jenkins-helm/helm-jenkins/helm-jenkins-0.1.0.tgz
-    version: 0.1.0
   jenkins-helm:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-06-03T19:31:27.048281468Z"
+    created: "2022-06-03T19:45:44.475407678Z"
     description: A Helm chart for Kubernetes
-    digest: bf70d4287f9a1e925c216b97dfb87deae39668323e70cb1295ad9bed5740d6f9
+    digest: 492d708acf7169a728bad92afc47b7d36a2a8db231ea7e1fb68349d68d937898
     name: jenkins-helm
     type: application
     urls:
     - https://nem1ga.github.io/jenkins-helm/helm-jenkins/jenkins-helm-0.2.0.tgz
     version: 0.2.0
-generated: "2022-06-03T19:31:27.047335287Z"
+generated: "2022-06-03T19:45:44.474773768Z"
