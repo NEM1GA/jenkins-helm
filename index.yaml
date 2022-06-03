@@ -8,6 +8,6 @@ entries:
     name: helm-jenkins
     type: application
     urls:
-    - https://NEM1GA.github.io/jenkins-helm/helm-jenkins-0.1.0.tgz
-    version: 0.1.0
+    - https://NEM1GA.github.io/jenkins-helm/helm-jenkins-0.2.0.tgz
+    version: 0.2.0
 generated: "2022-06-03T18:09:11.022294565Z"

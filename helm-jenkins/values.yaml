@@ -1,29 +1,73 @@
-namespace: ci-cd
-name: jenkins-helm
-image: jfrog.it-academy.by/public/jenkins-ci:ibombel
-mail: bombel.ilya@gmail.com
+replicaCount: 1
+
+image:
+  registry: jfrog.it-academy.by
+  repository: jfrog.it-academy.by/public/jenkins-ci:ibombel
+  puillPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+basic_security_path: /var/jenkins_home/init.groovy.d/basic-security.groovy
+jenkins_yaml_path: /var/jenkins_home/casc_configs/jenkins.yaml
+jenkins_path: /var/jenkins_home
+docker_sock_path: /var/run
+nfs_server: 192.168.37.105
+admin_email: bombel.ilya@gmail.com
+nfs_path: /mnt/IT-Academy/nfs-data/sa2-20-22/Ilya_Bombel/jenkins
+
+containerPort:
+  http-port: 8080
+  jnlp-port: 50000
+
+host:
+  main_host: jenkins-helm.k8s-9.sa
+  second_host: jenkins-helm.k8s-10.sa
+
+url:
+  main_host_url: http://jenkins-helm.k8s-9.sa/
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
 
 service:
- master:
-   port: 8080
-   targetPort: 8080
- slave:
-   port: 50000 
-   targetPort: 50000 
-
-requests:
-  cpu: 1000m
-  memory: 1000Mi
-limits:
-  cpu: 2300m
-  memory: 2300Mi
-
-nfs:
-  server: 192.168.37.105
-  path: /mnt/IT-Academy/nfs-data/sa2-20-22/ilya_bombel/jenkins
+  type: ClusterIP
+  port: 80
 
 ingress:
-  class: nginx
-  host: jenkins-helm.k8s-9.sa
-  alias: jenkins-helm.k8s-10.sa
-  port: 8080
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: jenkins-helm.k8s-9.sa
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2000Mi
+  requests:
+    cpu: 1000m
+    memory: 2000Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

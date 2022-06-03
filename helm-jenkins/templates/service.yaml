@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.name }}
-  namespace: {{ .Values.namespace }}
+  name: jenkins-helm
+  namespace: jenkins-helm
 spec:
   ports:
     - name: master
-      port: {{ .Values.service.master.port }}
-      targetPort: {{ .Values.service.master.targetPort }}
+      port: {{ index .Values "containerPort" "http-port" }}
+      targetPort: {{ index .Values "containerPort" "http-port" }}
     - name: slave
-      port: {{ .Values.service.slave.port }}
-      targetPort: {{ .Values.service.slave.targetPort }}
+      port: {{ index .Values "containerPort" "jnlp-port" }}
+      targetPort: {{ index .Values "containerPort" "jnlp-port" }}
   selector:
-    app: {{ .Values.name }}
+    app: jenkins-helm

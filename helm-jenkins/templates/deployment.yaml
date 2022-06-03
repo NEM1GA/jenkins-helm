@@ -2,56 +2,61 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Values.namespace }}
+  name: jenkins-helm
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.name }}
-  namespace: {{ .Values.namespace }}
+  name: jenkins-helm
+  namespace: jenkins-helm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Values.name }}
+      app: jenkins-helm
   template:
     metadata:
       labels:
-        app: {{ .Values.name }}
+        app: jenkins-helm
     spec:
       containers:
-        - name: {{ .Values.name }}
-          image: {{ .Values.image }}
+        - name: jenkins
+          image: {{ .Values.image.repository }}
           imagePullPolicy: IfNotPresent
           env:
             - name: JAVA_OPTS
               value: "-Djenkins.install.runSetupWizard=false"
+            - name: PASS
+              valueFrom:
+                secretKeyRef:
+                  name: jenkins-secret
+                  key: password
             - name: CASC_JENKINS_CONFIG
-              value: /var/jenkins_home/casc_configs/jenkins.yaml
+              value: {{ .Values.jenkins_yaml_path }}
           ports:
             - name: http-port
-              containerPort: 8080
+              containerPort: {{ index .Values "containerPort" "http-port" }}
             - name: jnlp-port
-              containerPort: 50000
+              containerPort: {{ index .Values "containerPort" "jnlp-port" }}
           securityContext:
             runAsUser: 0
           resources:
-            requests:
-              cpu: {{ index .Values "requests" "cpu" }}
-              memory: {{ index .Values "requests" "memory" }}
-            limits:
-              cpu: {{ index .Values "limits" "cpu" }}
-              memory: {{ index .Values "limits" "memory" }}
+              {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            - name: docker-sock
+              mountPath: {{ .Values.docker_sock_path }}
             - name: jenkins-auth-config
-              mountPath: /var/jenkins_home/init.groovy.d/basic-security.groovy
+              mountPath: {{ .Values.basic_security_path }}
               subPath: basic-security.groovy
             - name: jenkins-config-yaml
-              mountPath: /var/jenkins_home/casc_configs/jenkins.yaml
+              mountPath: {{ .Values.jenkins_yaml_path }}
               subPath: jenkins.yaml
             - name: jenkins-config
-              mountPath: /var/jenkins_home
+              mountPath: {{ .Values.jenkins_path }}
       volumes:
+        - name: docker-sock
+          hostPath:
+            path: {{ .Values.docker_sock_path }}
         - name: jenkins-auth-config
           configMap:
             name: basic-security
@@ -60,14 +65,14 @@ spec:
             name: jenkins-config
         - name: jenkins-config
           nfs:
-            server: {{ .Values.nfs.server }}
-            path: {{ .Values.nfs.path }}
+            server: {{ .Values.nfs_server }}
+            path: {{ .Values.nfs_path }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: basic-security
-  namespace: {{ .Values.namespace }}
+  namespace: jenkins-helm
 data:
   basic-security.groovy: |
     #!groovy
@@ -75,7 +80,7 @@ data:
     import hudson.security.*
     def instance = Jenkins.getInstance()
     println "--> creating local user 'admin'"
-    def password = System.getenv("PASS")
+    dev password = System.getenv("PASS")
     def hudsonRealm = new HudsonPrivateSecurityRealm(false)
     hudsonRealm.createAccount('admin',"admin")
     instance.setSecurityRealm(hudsonRealm)
@@ -88,7 +93,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: jenkins-config
-  namespace: {{ .Values.namespace }}
+  namespace: jenkins-helm
 data:
   jenkins.yaml: |
         jenkins:
@@ -97,9 +102,9 @@ data:
           - kubernetes:
               containerCapStr: "10"
               maxRequestsPerHostStr: "32"
-              jenkinsUrl: "http://jenkins:8080"
+              jenkinsUrl: "http://jenkins-helm:8080"
               name: "kubernetes"
-              namespace: "{{ .Values.namespace }}"
+              namespace: "jenkins-helm"
               skipTlsVerify: true
         credentials:
           system:
@@ -108,12 +113,35 @@ data:
               - usernamePassword:
                   description: "Githubuser"
                   id: "some_randome"
-                  password: "XXXXXXXXXXX"
+                  password: "password"
                   scope: GLOBAL
                   username: "git_hub_user"
         unclassified:
           location:
-            adminAddress: "{{ .Values.mail }}"
-            url: "http://{{ .Values.ingress.host }}"
+            adminAddress: {{ .Values.admin_email }}
+            url: {{ index .Values "url" "main_host_url" }}
           shell:
             shell: "/bin/bash"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins-secret
+  namespace: jenkins-helm
+type: Opaque
+data:
+  password: YWRtaW4=
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-helm
+  namespace: jenkins-helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: jenkins-helm
